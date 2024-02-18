@@ -2,14 +2,17 @@
 #include <windows.h>
 #define screenheight 650
 #define screenwidth 1000
-#define NUMBEROFENEMY 10
+#define NUMBEROFENEMY 50
+
+
+FILE *fp;
 
 /*
 	function iDraw() is called again and again by the system.
 	*/
 char animation[9][16]={"anim1.bmp","anim2.bmp","anim3.bmp","anim4.bmp","anim5.bmp","anim6.bmp","anim7.bmp","anim8.bmp"};
 char menu[5][20]= {"menubg.bmp", "title.bmp", "menu.bmp"};
-char game[5][20] = {"space1.bmp", "asteroid.bmp", "ship.bmp"};
+char game[5][20] = {"space1.bmp", "asteroid.bmp", "ship.bmp","gameover.bmp"};
 int space_x=0, space_y=0; 
 int image=0;
 int shoot_radius=5; //46,122 hocche top
@@ -17,6 +20,11 @@ bool collision= false;
 double collision_x, collision_y;
 int animation_index=0;
 bool explosion_music= false;
+
+int score=0;
+int lives=5;
+int game_over=0;
+//image=0 maane menu, image=1 maane game, image=2 maane gameover
 void showmenu()
 {
 	if(image==0)
@@ -36,7 +44,22 @@ void playgame()
 	}
 }
 
+void scorecard()
+{
+	if(image==1)
+	{
+		iSetColor(255,255,255);
+		iText(screenwidth-100, screenheight-30, "Score: ", GLUT_BITMAP_HELVETICA_18);
+		iText(screenwidth-100, screenheight-50, "Lives: ", GLUT_BITMAP_HELVETICA_18);
+		char scoreboard[10];
+		sprintf(scoreboard, "%d", score);
+		iText(screenwidth-40, screenheight-30, scoreboard, GLUT_BITMAP_HELVETICA_18);
+		char showlives[10];
+		sprintf(showlives, "%d", lives);
+		iText(screenwidth-40, screenheight-50, showlives, GLUT_BITMAP_HELVETICA_18);
 
+	}
+}
 
 
 int bullet_no=-1;
@@ -82,7 +105,7 @@ void dushmon_spawn()
 		{
 			iShowBMP2(dushmon[i].enemy_x,dushmon[i].enemy_y, game[1],0);
 		}
-		if(dushmon[i].enemy_y<-80)
+		if(dushmon[i].enemy_y<0)
 		{
 			dushmon[i].enemy_y= screenheight + rand() % 100;
 		}
@@ -116,6 +139,21 @@ void collision_animation()
 	}
 }
 
+void gameover()
+{
+	if(lives<0)
+	{
+		image = 2;
+		game_over=1;
+		iShowBMP(0,0,game[3]);
+		iText(450, screenheight-200, "Your Score: ", GLUT_BITMAP_TIMES_ROMAN_24);
+		char scoreboard[10];
+		sprintf(scoreboard, "%d", score);
+		iText(575, screenheight-200, scoreboard, GLUT_BITMAP_TIMES_ROMAN_24);
+	}
+}
+
+
 
 void iDraw() {
 	//place your drawing codes here
@@ -125,6 +163,8 @@ void iDraw() {
 	bomabaji();
 	dushmon_spawn();
 	collision_animation();
+	scorecard();
+	gameover();
 }
 
 
@@ -191,6 +231,12 @@ void iMouse(int button, int state, int mx, int my) {
 			guli[bullet_no].bullet_show = true; 
 		}
 		
+		if(image==2)
+		{
+			image=0;
+			lives=5;
+			score=0;
+		}
 
 	}
 	if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN) {
@@ -227,8 +273,7 @@ if (key == GLUT_KEY_END) {
 		exit(0);
 	}
 
-
-	else if (key == GLUT_KEY_UP && space_y+140<screenheight)
+else if (key == GLUT_KEY_UP && space_y+140<screenheight)
 	{
 		space_y += 10;
 	}
@@ -244,10 +289,6 @@ if (key == GLUT_KEY_END) {
 	{
 		space_x -= 10;
 	}
-
-
-
-	//place your codes for other keys here
 }
 
 
@@ -261,17 +302,6 @@ void shooting()
 	}
 	}
 }
-
-void change()
-{
-	shooting();
-	for(int i=0; i<NUMBEROFENEMY;i++)
-	{
-		dushmon[i].enemy_y -= 3;
-	}
-}
-
-
 
 void collisioncheck()
 {
@@ -288,11 +318,38 @@ void collisioncheck()
 				collision_x = dushmon[j].enemy_x;
 				collision_y = dushmon[j].enemy_y;
 				collision = true;
+				score++;
 			}
 			}
 		}
+
+		for(int k=0; k<NUMBEROFENEMY; k++)
+			{
+			if((space_x<(dushmon[k].enemy_x+74)) && dushmon[k].enemy_show == true && ((space_x+144) > dushmon[k].enemy_x) && ((space_y+109) > dushmon[k].enemy_y) && ((dushmon[k].enemy_y+ 70)>space_y))
+			{ 
+           		dushmon[k].enemy_show = false;
+				collision_x = dushmon[k].enemy_x;
+				collision_y = dushmon[k].enemy_y;
+				collision = true;
+				lives--;
+			}
+			}
 	}
 }
+
+
+void change()
+{
+	shooting();
+	for(int i=0; i<NUMBEROFENEMY;i++)
+	{
+		dushmon[i].enemy_y -= 5;
+	}
+}
+
+
+
+
 
 void enemy_coordinates()
 {
@@ -311,7 +368,8 @@ int main()
 	enemy_coordinates();
 	//place your own initialization codes here.
 	//PlaySoundA("music\\street.wav", NULL, SND_FILENAME | SND_ASYNC);
-	iSetTimer(25,collisioncheck);
+	//iSetTimer(25,collisioncheck);
+	iSetTimer(20,collisioncheck);
 	iSetTimer(30, change);
 	iInitialize(screenwidth, screenheight, "Asteroid Escape");
 	return 0;
