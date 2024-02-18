@@ -2,32 +2,34 @@
 #include <windows.h>
 #define screenheight 650
 #define screenwidth 1000
-#define NUMBEROFENEMY 50
+#define NUMBEROFENEMY 10
 
 
-FILE *fp;
-
-/*
-	function iDraw() is called again and again by the system.
-	*/
 char animation[9][16]={"anim1.bmp","anim2.bmp","anim3.bmp","anim4.bmp","anim5.bmp","anim6.bmp","anim7.bmp","anim8.bmp"};
 char menu[5][20]= {"menubg.bmp", "title.bmp", "menu.bmp"};
 char game[5][20] = {"space1.bmp", "asteroid.bmp", "ship.bmp","gameover.bmp"};
-int space_x=0, space_y=0; 
-int image=0;
-int shoot_radius=5; //46,122 hocche top
-bool collision= false;
+
+int space_x=0, space_y=0; //Co_ordinates of spaceship
+
+int shoot_radius=5; //bullet radius
+
+int game_state=0; //game_state=0 means menu, 1 means game, 2 means game over
+
 double collision_x, collision_y;
 int animation_index=0;
+
+
 bool explosion_music= false;
+bool collision= false;
 
 int score=0;
 int lives=5;
 int game_over=0;
-//image=0 maane menu, image=1 maane game, image=2 maane gameover
+
+
 void showmenu()
 {
-	if(image==0)
+	if(game_state==0)
 	{
 		iShowBMP(0,0,menu[0]);
 		iShowBMP2(200,500,menu[1], 255);
@@ -37,16 +39,16 @@ void showmenu()
 
 void playgame()
 {
-	if(image == 1)
+	if(game_state == 1)
 	{
-		iShowBMP(0,0, game[0]);
-		iShowBMP2(space_x,space_y,game[2],0);
+		iShowBMP(0,0, game[0]); //space background show
+		iShowBMP2(space_x,space_y,game[2],0); // spaceship show
 	}
 }
 
 void scorecard()
 {
-	if(image==1)
+	if(game_state==1)
 	{
 		iSetColor(255,255,255);
 		iText(screenwidth-100, screenheight-30, "Score: ", GLUT_BITMAP_HELVETICA_18);
@@ -64,58 +66,55 @@ void scorecard()
 
 int bullet_no=-1;
 
-struct bullet
+struct weapon
 {
 	double bullet_x;
 	double bullet_y;
 	bool bullet_show;
 };
-bullet guli[20];
+weapon bullet[20];
 
-void bomabaji()
+void shoot()
 {
 	for(int i=0;i<20;i++)
 	{
-		if(guli[i].bullet_show)
+		if(bullet[i].bullet_show)
 		{
 			iSetColor(255,0,0);
-			iFilledCircle(guli[i].bullet_x, guli[i].bullet_y, shoot_radius, 100);
+			iFilledCircle(bullet[i].bullet_x, bullet[i].bullet_y, shoot_radius, 100);
 		}
-		if(guli[i].bullet_y>screenheight)
+		if(bullet[i].bullet_y>screenheight)
 		{
-			guli[i].bullet_show = false;
+			bullet[i].bullet_show = false;
 		}
 	}
 }
 
-struct shotru
+struct enemy
 {
-	double enemy_x;
-	double enemy_y;
-	int enemy_index;
-	bool enemy_show;
+	double asteroid_x;
+	double asteroid_y;
+	bool asteroid_show;
 };
-shotru dushmon[NUMBEROFENEMY];
+enemy asteroid[NUMBEROFENEMY];
 
-void dushmon_spawn()
+void enemy_spawn()
 {
 	for(int i=0; i<NUMBEROFENEMY;i++)
 	{
-		if(dushmon[i].enemy_show == true && image==1)
+		if(asteroid[i].asteroid_show == true && game_state==1)
 		{
-			iShowBMP2(dushmon[i].enemy_x,dushmon[i].enemy_y, game[1],0);
+			iShowBMP2(asteroid[i].asteroid_x,asteroid[i].asteroid_y, game[1],0);
 		}
-		if(dushmon[i].enemy_y<0)
+		if(asteroid[i].asteroid_y<0)
 		{
-			dushmon[i].enemy_y= screenheight + rand() % 100;
+			asteroid[i].asteroid_y= screenheight + rand() % 100;
 		}
-		if(dushmon[i].enemy_show==false) /*Respawning of enemies*/
+		if(asteroid[i].asteroid_show==false) /*Respawning of enemies*/
 		{
-			dushmon[i].enemy_x = rand() % screenwidth;
-			dushmon[i].enemy_y= screenheight + rand() % 100;
-			dushmon[i].enemy_show = true;
-
-
+			asteroid[i].asteroid_x = rand() % screenwidth;
+			asteroid[i].asteroid_y= screenheight + rand() % 100;
+			asteroid[i].asteroid_show = true;
 		}
 	}
 }
@@ -143,7 +142,7 @@ void gameover()
 {
 	if(lives<0)
 	{
-		image = 2;
+		game_state = 2;
 		game_over=1;
 		iShowBMP(0,0,game[3]);
 		iText(450, screenheight-200, "Your Score: ", GLUT_BITMAP_TIMES_ROMAN_24);
@@ -154,14 +153,15 @@ void gameover()
 }
 
 
-
+/*
+	function iDraw() is called again and again by the system.
+	*/
 void iDraw() {
-	//place your drawing codes here
 	iClear();
 	showmenu();
 	playgame();
-	bomabaji();
-	dushmon_spawn();
+	shoot();
+	enemy_spawn();
 	collision_animation();
 	scorecard();
 	gameover();
@@ -183,13 +183,13 @@ void iMouseMove(int mx, int my) {
 	(mx, my) is the position where the mouse pointer is.
 	*/
 void iMouse(int button, int state, int mx, int my) {
-    if (image == 0 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && mx>=353 && mx<=582 && my>=400 && my<=475 ) {
+    if (game_state == 0 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && mx>=353 && mx<=582 && my>=400 && my<=475 ) {
 		//place your codes here
 		//	printf("x = %d, y= %d\n",mx,my);
-		image = 1;
+		game_state = 1;
 	}
 
-	if (image == 0 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && mx>=318 && mx<=635) 
+	if (game_state == 0 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && mx>=318 && mx<=635) 
 	{
 		if(my>=20 && my<=87)
 		{
@@ -209,7 +209,7 @@ void iMouse(int button, int state, int mx, int my) {
 		}
         if(my>= 422 && my<=491)
 		{
-			image=1;
+			game_state=1;
 		}
 	}
     
@@ -219,21 +219,21 @@ void iMouse(int button, int state, int mx, int my) {
 	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
 		//place your codes here
 		//	printf("x = %d, y= %d\n",mx,my);
-		if(image==1)
+		if(game_state==1)
 		{
 			if(bullet_no>=19)
 			{
 				bullet_no=-1;
 			}
 			bullet_no++;
-			guli[bullet_no].bullet_x = space_x + 110;
-			guli[bullet_no].bullet_y = space_y + 125;
-			guli[bullet_no].bullet_show = true; 
+			bullet[bullet_no].bullet_x = space_x + 110;
+			bullet[bullet_no].bullet_y = space_y + 125;
+			bullet[bullet_no].bullet_show = true; 
 		}
 		
-		if(image==2)
+		if(game_state==2)
 		{
-			image=0;
+			game_state=0;
 			lives=5;
 			score=0;
 		}
@@ -294,29 +294,29 @@ else if (key == GLUT_KEY_UP && space_y+140<screenheight)
 
 void shooting()
 {
-	if(image==1)
+	if(game_state==1)
 	{
 	for(int i=0; i<20; i++)
 	{
-        guli[i].bullet_y += 10;
+        bullet[i].bullet_y += 10;
 	}
 	}
 }
 
 void collisioncheck()
 {
-	if(image==1)
+	if(game_state==1)
 	{
 		for(int i=0; i<20;i++)
 		{
 			for(int j=0; j<NUMBEROFENEMY; j++)
 			{
-			if((guli[i].bullet_x+shoot_radius>dushmon[j].enemy_x) && dushmon[j].enemy_show == true && guli[i].bullet_show==true && (guli[i].bullet_x-shoot_radius < dushmon[j].enemy_x+73) && ((guli[i].bullet_y+shoot_radius) > dushmon[j].enemy_y) && ((dushmon[j].enemy_y+ 70)>(guli[i].bullet_y-shoot_radius)))
+			if((bullet[i].bullet_x+shoot_radius>asteroid[j].asteroid_x) && asteroid[j].asteroid_show == true && bullet[i].bullet_show==true && (bullet[i].bullet_x-shoot_radius < asteroid[j].asteroid_x+73) && ((bullet[i].bullet_y+shoot_radius) > asteroid[j].asteroid_y) && ((asteroid[j].asteroid_y+ 70)>(bullet[i].bullet_y-shoot_radius)))
 			{ 
-           		dushmon[j].enemy_show = false;
-				guli[i].bullet_show=false;
-				collision_x = dushmon[j].enemy_x;
-				collision_y = dushmon[j].enemy_y;
+           		asteroid[j].asteroid_show = false;
+				bullet[i].bullet_show=false;
+				collision_x = asteroid[j].asteroid_x;
+				collision_y = asteroid[j].asteroid_y;
 				collision = true;
 				score++;
 			}
@@ -325,11 +325,11 @@ void collisioncheck()
 
 		for(int k=0; k<NUMBEROFENEMY; k++)
 			{
-			if((space_x<(dushmon[k].enemy_x+74)) && dushmon[k].enemy_show == true && ((space_x+144) > dushmon[k].enemy_x) && ((space_y+109) > dushmon[k].enemy_y) && ((dushmon[k].enemy_y+ 70)>space_y))
+			if((space_x<(asteroid[k].asteroid_x+74)) && asteroid[k].asteroid_show == true && ((space_x+144) > asteroid[k].asteroid_x) && ((space_y+109) > asteroid[k].asteroid_y) && ((asteroid[k].asteroid_y+ 70)>space_y))
 			{ 
-           		dushmon[k].enemy_show = false;
-				collision_x = dushmon[k].enemy_x;
-				collision_y = dushmon[k].enemy_y;
+           		asteroid[k].asteroid_show = false;
+				collision_x = asteroid[k].asteroid_x;
+				collision_y = asteroid[k].asteroid_y;
 				collision = true;
 				lives--;
 			}
@@ -343,7 +343,7 @@ void change()
 	shooting();
 	for(int i=0; i<NUMBEROFENEMY;i++)
 	{
-		dushmon[i].enemy_y -= 5;
+		asteroid[i].asteroid_y -= 5;
 	}
 }
 
@@ -355,9 +355,9 @@ void enemy_coordinates()
 {
 	for(int i=0; i<NUMBEROFENEMY;i++)
 	{
-		dushmon[i].enemy_x = rand() % (screenwidth-100);
-		dushmon[i].enemy_y= screenheight + rand() % 100;
-		dushmon[i].enemy_show = true;
+		asteroid[i].asteroid_x = rand() % (screenwidth-100);
+		asteroid[i].asteroid_y= screenheight + rand() % 100;
+		asteroid[i].asteroid_show = true;
 	}
 }
 
@@ -366,9 +366,7 @@ void enemy_coordinates()
 int main() 
 {
 	enemy_coordinates();
-	//place your own initialization codes here.
 	//PlaySoundA("music\\street.wav", NULL, SND_FILENAME | SND_ASYNC);
-	//iSetTimer(25,collisioncheck);
 	iSetTimer(20,collisioncheck);
 	iSetTimer(30, change);
 	iInitialize(screenwidth, screenheight, "Asteroid Escape");
