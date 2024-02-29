@@ -15,7 +15,7 @@
 
 
 char animation[9][16] = {"anim\\anim1.bmp", "anim\\anim2.bmp", "anim\\anim3.bmp", "anim\\anim4.bmp", "anim\\anim5.bmp", "anim\\anim6.bmp", "anim\\anim7.bmp", "anim\\anim8.bmp"};
-char game[6][20] = {"space1.bmp", "asteroid.bmp", "ship.bmp", "enemyship.bmp", "gameover.bmp","fire.bmp"};
+char game[7][20] = {"space1.bmp", "asteroid.bmp", "ship.bmp", "enemyship.bmp", "gameover.bmp","fire.bmp","enemyshoot.bmp"};
 
 int player_x = 0, player_y = 0; // Co_ordinates of spaceship
 
@@ -54,21 +54,6 @@ void playgame()
 	}
 }
 
-void scorecard()
-{
-	if (game_state == 1)
-	{
-		iSetColor(255, 255, 255);
-		iText(screenwidth - 100, screenheight - 30, "Score: ", GLUT_BITMAP_HELVETICA_18);
-		iText(screenwidth - 100, screenheight - 50, "Lives: ", GLUT_BITMAP_HELVETICA_18);
-		char scoreboard[10];
-		sprintf(scoreboard, "%d", score);
-		iText(screenwidth - 40, screenheight - 30, scoreboard, GLUT_BITMAP_HELVETICA_18);
-		char showlives[10];
-		sprintf(showlives, "%d", lives);
-		iText(screenwidth - 40, screenheight - 50, showlives, GLUT_BITMAP_HELVETICA_18);
-	}
-}
 
 int bullet_no = -1;
 
@@ -134,7 +119,7 @@ struct enemy_attack
 {
 	double bullet_x;
 	double bullet_y;
-	bool bullet_show;
+	bool bullet_show=false;
 };
 enemy_attack enemy_bullet[20];
 
@@ -147,7 +132,7 @@ void enemy_shoot()
 			if (enemy_bullet[i].bullet_show)
 			{
 				iSetColor(255, 0, 0);
-				iFilledCircle(enemy_bullet[i].bullet_x, enemy_bullet[i].bullet_y, shoot_radius, 100);
+				iShowBMP2(enemy_bullet[i].bullet_x, enemy_bullet[i].bullet_y, game[6], 0);
 			}
 			if (enemy_bullet[i].bullet_y < 0)
 			{
@@ -223,6 +208,27 @@ void collision_animation()
 			// PlaySoundA("music\\efprintf(point,"Yo, bang bang skitz, skitz, nigga");xplosion.wav", NULL, SND_FILENAME | SND_ASYNC);
 		}
 }
+
+
+void scorecard()
+{
+	if (game_state == 1)
+	{
+		iSetColor(255, 255, 255);
+		iText(screenwidth - 100, screenheight - 30, "Score: ", GLUT_BITMAP_HELVETICA_18);
+		iText(screenwidth - 100, screenheight - 50, "Lives: ", GLUT_BITMAP_HELVETICA_18);
+		char scoreboard[10];
+		sprintf(scoreboard, "%d", score);
+		iText(screenwidth - 40, screenheight - 30, scoreboard, GLUT_BITMAP_HELVETICA_18);
+		char showlives[10];
+		sprintf(showlives, "%d", lives);
+		iText(screenwidth - 40, screenheight - 50, showlives, GLUT_BITMAP_HELVETICA_18);
+	}
+}
+
+
+
+
 
 
 void gameover()
@@ -540,6 +546,8 @@ void collisioncheck()
 					lives--;
 				}
 			}
+			
+
 		}
 
 
