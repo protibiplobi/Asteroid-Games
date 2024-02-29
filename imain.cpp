@@ -21,7 +21,7 @@ int player_x = 0, player_y = 0; // Co_ordinates of spaceship
 
 int shoot_radius = 5; // bullet radius
 
-int game_state = 0; // game_state=0 means menu, 1 means game, 2 means game over
+int game_state = 0; // game_state=0 means menu, 1 means game, 2 means game over, 3 means high score
 
 bool explosion_music = false;
 
@@ -161,6 +161,7 @@ void enemy_spawn()
 {
 	if (game_state == 1)
 	{
+
 		for (int i = 0; i < asteroidnumber; i++)
 		{
 			if (asteroid[i].asteroid_show == true)
@@ -169,15 +170,16 @@ void enemy_spawn()
 			}
 			if (asteroid[i].asteroid_y < 0)
 			{
-				asteroid[i].asteroid_y = screenheight + rand() % 100;
+				asteroid[i].asteroid_show = false;
 			}
 			if (asteroid[i].asteroid_show == false) /*Respawning of enemies*/
 			{
-				asteroid[i].asteroid_x = rand() % screenwidth;
+				asteroid[i].asteroid_x = rand() % (screenwidth-asteroidwidth);
 				asteroid[i].asteroid_y = screenheight + rand() % 100;
 				asteroid[i].asteroid_show = true;
 			}
 		}
+
 		if (score > 50)
 		{
 			for (int i = 0; i < enemyshipnumber; i++)
@@ -208,30 +210,20 @@ struct destruction
 	int animation_index;
 	bool collision_show;
 };
-destruction collision[asteroidnumber];
+destruction collision[20];
 
 void collision_animation()
 {
-	for (int i = 0; i < asteroidnumber; i++)
+	for (int i = 0; i < 20; i++)
 	{
 		if (collision[i].collision_show)
 		{
-			while (collision[i].animation_index < 7)
-			{
 				iShowBMP2(collision[i].collision_x, collision[i].collision_y, animation[collision[i].animation_index], 0);
-				collision[i].animation_index++;
-			}
-
-			// PlaySoundA("music\\efprintf(point,"Yo, bang bang skitz, skitz, nigga");xplosion.wav", NULL, SND_FILENAME | SND_ASYNC);
-
-			if (collision[i].animation_index == 7)
-			{
-				collision[i].collision_show = false;
-				collision[i].animation_index = 0;
-			}
 		}
-	}
+			// PlaySoundA("music\\efprintf(point,"Yo, bang bang skitz, skitz, nigga");xplosion.wav", NULL, SND_FILENAME | SND_ASYNC);
+		}
 }
+
 
 void gameover()
 {
@@ -273,6 +265,7 @@ void gameover()
 			bullet2[i].bullet_show = false;
 			enemy_bullet[i].bullet_show=false;
 		}
+		enemyship[0].enemyship_show=false;
 	}
 }
 
@@ -484,6 +477,8 @@ void shooting()
 	}
 }
 
+int collision_no=0;
+
 void collisioncheck()
 {
 	if (game_state == 1)
@@ -496,9 +491,14 @@ void collisioncheck()
 				{
 					asteroid[j].asteroid_show = false;
 					bullet2[i].bullet_show = false;
-					collision[j].collision_x = asteroid[j].asteroid_x;
-					collision[j].collision_y = asteroid[j].asteroid_y;
-					collision[j].collision_show = true;
+					collision[collision_no].collision_x = asteroid[j].asteroid_x;
+					collision[collision_no].collision_y = asteroid[j].asteroid_y;
+					collision[collision_no].collision_show = true;
+					collision_no++;
+					if(collision_no>19)
+					{
+						collision_no=0;
+					}
 					score++;
 				}
 			}
@@ -511,9 +511,14 @@ void collisioncheck()
 					{
 						asteroid[j].asteroid_show = false;
 						bullet1[i].bullet_show = false;
-						collision[j].collision_x = asteroid[j].asteroid_x;
-						collision[j].collision_y = asteroid[j].asteroid_y;
-						collision[j].collision_show = true;
+						collision[collision_no].collision_x = asteroid[j].asteroid_x;
+						collision[collision_no].collision_y = asteroid[j].asteroid_y;
+						collision[collision_no].collision_show = true;
+						collision_no++;
+						if(collision_no>19)
+						{
+							collision_no=0;
+						}
 						score++;
 					}
 				}
@@ -524,13 +529,20 @@ void collisioncheck()
 				if ((player_x < (asteroid[k].asteroid_x + asteroidwidth)) && (asteroid[k].asteroid_show == true) && ((player_x + spaceshipwidth) > asteroid[k].asteroid_x) && ((player_y + spaceshipheight) > asteroid[k].asteroid_y) && ((asteroid[k].asteroid_y + 70) > player_y))
 				{
 					asteroid[k].asteroid_show = false;
-					collision[k].collision_x = asteroid[k].asteroid_x;
-					collision[k].collision_y = asteroid[k].asteroid_y;
-					collision[k].collision_show = true;
+					collision[collision_no].collision_x = asteroid[k].asteroid_x;
+					collision[collision_no].collision_y = asteroid[k].asteroid_y;
+					collision[collision_no].collision_show = true;
+					collision_no++;
+					if(collision_no>19)
+					{
+						collision_no=0;
+					}
 					lives--;
 				}
 			}
 		}
+
+
 	}
 }
 
@@ -594,7 +606,7 @@ void enemy_coordinates()
 
 void enemy_shooting()
 {
-	if (game_state == 1)
+	if (game_state == 1 && enemyship[0].enemyship_show==true)
 	{
 		if (enemy_bullet_no >= 19)
 		{
@@ -608,6 +620,22 @@ void enemy_shooting()
 }
 
 
+void col_animation()
+{
+	for(int i=0;i<20;i++)
+		{
+			if(collision[i].collision_show==true)
+			{
+				collision[i].animation_index++;
+
+				if (collision[i].animation_index == 7)
+				{
+					collision[i].collision_show = false;
+					collision[i].animation_index = 0;
+				}
+			}
+		}
+}
 
 int main()
 {
@@ -615,6 +643,7 @@ int main()
 	// PlaySoundA("music\\street.wav", NULL, SND_FILENAME | SND_ASYNC);
 	iSetTimer(20, collisioncheck);
 	iSetTimer(1, change);
+	iSetTimer(30,col_animation);
 	iSetTimer(1000,enemy_shooting);
 	iInitialize(screenwidth, screenheight, "Asteroid Escape");
 	return 0;
