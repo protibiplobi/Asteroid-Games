@@ -5,7 +5,7 @@
 #define screenheight 700
 #define screenwidth 1000
 #define asteroidnumber 10
-#define enemyshipnumber 1
+#define enemyshipnumber 2
 #define spaceshipheight 105
 #define spaceshipwidth 117
 #define asteroidheight 60
@@ -109,34 +109,34 @@ struct enemy
 	double enemyship_dx = 3;
 	double enemyship_dy = 3;
 	bool enemyship_show;
-	int enemyship_life;
+	int enemyship_life=3;
 	bool horizontal;
-};
-enemy asteroid[asteroidnumber];
-enemy enemyship[enemyshipnumber];
 
-struct enemy_attack
-{
 	double bullet_x;
 	double bullet_y;
 	bool bullet_show=false;
 };
-enemy_attack enemy_bullet[20];
+enemy asteroid[asteroidnumber];
+enemy enemyship[enemyshipnumber];
+enemy enemy_bullet[enemyshipnumber][10];
 
 void enemy_shoot()
 {
 	if (game_state == 1)
 	{
-		for (int i = 0; i < 20; i++)
+		for (int i = 0; i < enemyshipnumber; i++)
 		{
-			if (enemy_bullet[i].bullet_show)
+			for(int j=0;j<10;j++)
 			{
-				iSetColor(255, 0, 0);
-				iShowBMP2(enemy_bullet[i].bullet_x, enemy_bullet[i].bullet_y, game[6], 0);
-			}
-			if (enemy_bullet[i].bullet_y < 0)
-			{
-				enemy_bullet[i].bullet_show = false;
+				if (enemy_bullet[i][j].bullet_show)
+				{
+					iSetColor(255, 0, 0);
+					iShowBMP2(enemy_bullet[i][j].bullet_x, enemy_bullet[i][j].bullet_y, game[6], 0);
+				}
+				if (enemy_bullet[i][j].bullet_y < 0)
+				{
+					enemy_bullet[i][j].bullet_show = false;
+				}
 			}
 		}
 	}
@@ -175,14 +175,16 @@ void enemy_spawn()
 				}
 				if (enemyship[i].enemyship_show == false) // Respawning of enemies//
 				{
-					enemyship[i].enemyship_x = rand() % (screenwidth - 100);
+					enemyship[i].enemyship_x = 5 + rand() % (screenwidth - 100);
 					enemyship[i].enemyship_y = screenheight + rand() % 100;
 					enemyship[i].enemyship_show = true;
+					enemyship[i].enemyship_life = 3;
+					enemyship[i].horizontal = false;
 				}
 				if (enemyship[i].enemyship_y < screenheight - 150 - (rand() % 300))
 				{
 					enemyship[i].horizontal = true;
-				}
+				} 
 			}
 		}
 	}
@@ -255,23 +257,29 @@ void gameover()
 		{
 			asteroid[i].asteroid_x = rand() % (screenwidth - 100);
 			asteroid[i].asteroid_y = screenheight + rand() % 100;
-			asteroid[i].asteroid_show = true;
+			asteroid[i].asteroid_show = false;
 		}
 
 		for (int i = 0; i < enemyshipnumber; i++)
 		{
 			enemyship[i].enemyship_x = rand() % (screenwidth - 100);
 			enemyship[i].enemyship_y = screenheight + rand() % 100;
-			enemyship[i].enemyship_show = true;
+			enemyship[i].enemyship_show = false;
 			enemyship[i].horizontal = false;
 		}
 		for (int i = 0; i < 20; i++)
 		{
 			bullet1[i].bullet_show = false;
 			bullet2[i].bullet_show = false;
-			enemy_bullet[i].bullet_show=false;
+			
 		}
-		enemyship[0].enemyship_show=false;
+		for(int i=0;i<enemyshipnumber;i++)
+		{
+			for(int j=0;j<10;j++)
+			{
+				enemy_bullet[i][j].bullet_show=false;
+			}
+		}
 	}
 }
 
@@ -489,6 +497,7 @@ void collisioncheck()
 {
 	if (game_state == 1)
 	{
+		//collision between player's bullet 1 and asteroid
 		for (int i = 0; i < 20; i++)
 		{
 			for (int j = 0; j < asteroidnumber; j++)
@@ -508,7 +517,7 @@ void collisioncheck()
 					score++;
 				}
 			}
-
+		//collision between player's bullet 2 and asteroid
 			for (int i = 0; i < 20; i++)
 			{
 				for (int j = 0; j < asteroidnumber; j++)
@@ -529,10 +538,10 @@ void collisioncheck()
 					}
 				}
 			}
-
+			// collision between player and asteroid
 			for (int k = 0; k < asteroidnumber; k++)
 			{
-				if ((player_x < (asteroid[k].asteroid_x + asteroidwidth)) && (asteroid[k].asteroid_show == true) && ((player_x + spaceshipwidth) > asteroid[k].asteroid_x) && ((player_y + spaceshipheight) > asteroid[k].asteroid_y) && ((asteroid[k].asteroid_y + 70) > player_y))
+				if ((player_x < (asteroid[k].asteroid_x + asteroidwidth)) && (asteroid[k].asteroid_show == true) && ((player_x + spaceshipwidth) > asteroid[k].asteroid_x) && ((player_y + spaceshipheight-33) > asteroid[k].asteroid_y) && ((asteroid[k].asteroid_y + 70) > player_y))
 				{
 					asteroid[k].asteroid_show = false;
 					collision[collision_no].collision_x = asteroid[k].asteroid_x;
@@ -547,10 +556,84 @@ void collisioncheck()
 				}
 			}
 			
+			// collision between player and enemy bullet
+			for(int i=0;i<enemyshipnumber;i++)
+			{
+				for(int j=0;j<10;j++)
+				{
+					if ((player_x < (enemy_bullet[i][j].bullet_x + 7)) && (enemy_bullet[i][j].bullet_show == true) && ((player_x + spaceshipwidth) > enemy_bullet[i][j].bullet_x) && ((player_y + spaceshipheight-33) > enemy_bullet[i][j].bullet_y) && ((enemy_bullet[i][j].bullet_x+ 40) > player_y))
+					{
+					enemy_bullet[i][j].bullet_show = false;
+					collision[collision_no].collision_x = enemy_bullet[i][j].bullet_x;
+					collision[collision_no].collision_y = enemy_bullet[i][j].bullet_y;
+					collision[collision_no].collision_show = true;
+					collision_no++;
+					if(collision_no>19)
+					{
+						collision_no=0;
+					}
+					lives--;
+					}
+				}	
+			}
+
+			//collision between player bullet 1 and enemy spaceship
+
+			for (int i = 0; i < 20; i++)
+			{
+				for (int j = 0; j < enemyshipnumber; j++)
+				{
+					if ((bullet1[i].bullet_x + shootwidth > enemyship[j].enemyship_x) && enemyship[j].enemyship_show == true && bullet1[i].bullet_show == true && (bullet1[i].bullet_x < (enemyship[j].enemyship_x + 101)) && ((bullet1[i].bullet_y + shootheight) > enemyship[j].enemyship_y) && ((enemyship[j].enemyship_y + 110) > bullet1[i].bullet_y))
+					{
+						enemyship[j].enemyship_life--;
+						if(enemyship[j].enemyship_life==0)
+						{
+							enemyship[j].enemyship_show = false;
+						}
+						bullet1[i].bullet_show = false;
+						collision[collision_no].collision_x = enemyship[j].enemyship_x+30;
+						collision[collision_no].collision_y = enemyship[j].enemyship_y+30;
+						collision[collision_no].collision_show = true;
+						collision_no++;
+						if(collision_no>19)
+						{
+							collision_no=0;
+						}
+						score++;
+					}
+				}
+			}
+
+
+			//collision between player bullet 2 and enemy spaceship
+
+			for (int i = 0; i < 20; i++)
+			{
+				for (int j = 0; j < enemyshipnumber; j++)
+				{
+					if ((bullet2[i].bullet_x + shootwidth > enemyship[j].enemyship_x) && enemyship[j].enemyship_show == true && bullet2[i].bullet_show == true && (bullet2[i].bullet_x < (enemyship[j].enemyship_x + 101)) && ((bullet2[i].bullet_y + shootheight) > enemyship[j].enemyship_y) && ((enemyship[j].enemyship_y + 110) > bullet2[i].bullet_y))
+					{
+						enemyship[j].enemyship_life--;
+						if(enemyship[j].enemyship_life==0)
+						{
+							enemyship[j].enemyship_show = false;
+						}
+						bullet2[i].bullet_show = false;
+						collision[collision_no].collision_x = enemyship[j].enemyship_x+30;
+						collision[collision_no].collision_y = enemyship[j].enemyship_y+30;
+						collision[collision_no].collision_show = true;
+						collision_no++;
+						if(collision_no>19)
+						{
+							collision_no=0;
+						}
+						score++;
+					}
+				}
+			}
+
 
 		}
-
-
 	}
 }
 
@@ -573,18 +656,22 @@ void change()
 			{
 				enemyship[i].enemyship_y -= enemyship[i].enemyship_dy;
 			}
-
-			enemyship[i].enemyship_x -= enemyship[i].enemyship_dx;
-
-			if (enemyship[i].enemyship_x >= screenwidth || enemyship[i].enemyship_x <= 5)
+			if (enemyship[i].enemyship_x >= screenwidth || enemyship[i].enemyship_x < 5)
 			{
 				enemyship[i].enemyship_dx = -enemyship[i].enemyship_dx;
 			}
+			enemyship[i].enemyship_x -= enemyship[i].enemyship_dx;
 		}
 	}
-	for(int i=0;i<20;i++)
+	for(int i=0;i<enemyshipnumber;i++)
 	{
-			enemy_bullet[i].bullet_y -= 5;
+		for(int j=0;j<10;j++)
+		{
+			if(enemy_bullet[i][j].bullet_show == true)
+			{
+				enemy_bullet[i][j].bullet_y -= 5;
+			}
+		}
 	}
 	
 }
@@ -595,7 +682,7 @@ void enemy_coordinates()
 	{
 		for (int i = 0; i < asteroidnumber; i++)
 		{
-			asteroid[i].asteroid_x = rand() % (screenwidth - 100);
+			asteroid[i].asteroid_x =  rand() % (screenwidth - 100);
 			asteroid[i].asteroid_y = screenheight + rand() % 100;
 			asteroid[i].asteroid_show = true;
 		}
@@ -603,10 +690,10 @@ void enemy_coordinates()
 		{
 			for (int i = 0; i < enemyshipnumber; i++)
 			{
-				enemyship[i].enemyship_x = rand() % (screenwidth - 100);
+				enemyship[i].enemyship_x = 5 + rand() % (screenwidth - 100);
 				enemyship[i].enemyship_y = screenheight + rand() % 100;
 				enemyship[i].enemyship_show = true;
-				enemyship[i].horizontal = false;
+				enemyship[i].horizontal = false; 
 			}
 		}
 	}
@@ -614,16 +701,22 @@ void enemy_coordinates()
 
 void enemy_shooting()
 {
-	if (game_state == 1 && enemyship[0].enemyship_show==true)
+	if (game_state == 1)
 	{
-		if (enemy_bullet_no >= 19)
+		for(int i=0;i<enemyshipnumber;i++)
 		{
-			enemy_bullet_no = -1;
+			if(enemyship[i].enemyship_show==true && enemyship[i].enemyship_y<screenheight) 
+			{
+				if (enemy_bullet_no >= 9)
+				{
+					enemy_bullet_no = -1;
+				}
+			enemy_bullet_no++;
+			enemy_bullet[i][enemy_bullet_no].bullet_x = enemyship[i].enemyship_x + 6;
+			enemy_bullet[i][enemy_bullet_no].bullet_y = enemyship[i].enemyship_y + 0;
+			enemy_bullet[i][enemy_bullet_no].bullet_show = true;
+			}
 		}
-		enemy_bullet_no++;
-		enemy_bullet[enemy_bullet_no].bullet_x = enemyship[0].enemyship_x + 6;
-		enemy_bullet[enemy_bullet_no].bullet_y = enemyship[0].enemyship_y + 0;
-		enemy_bullet[enemy_bullet_no].bullet_show = true;
 	}
 }
 
