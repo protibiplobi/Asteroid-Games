@@ -822,7 +822,7 @@ void change()
 			}
 			enemyship[i].enemyship_x -= enemyship[i].enemyship_dx;
 		}
-	}
+	
 	for(int i=0;i<enemyshipnumber;i++)
 	{
 		for(int j=0;j<30;j++)
@@ -834,15 +834,15 @@ void change()
 		}
 	}
 
-	if(life_show)
-	{
-		life_y -= 3;
-		if(life_y<0)
+		if(life_show)
 		{
-			life_show = false;
+			life_y -= 3;
+			if(life_y<0)
+			{
+				life_show = false;
+			}
 		}
 	}
-	
 }
 
 void enemy_coordinates()
