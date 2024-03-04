@@ -21,32 +21,51 @@ int player_x = 0, player_y = 0; // Co_ordinates of spaceship
 
 int shoot_radius = 5; // bullet radius
 
-int game_state = 0; // game_state=0 means menu, 1 means game, 2 means game over, 3 means high score
+int game_state = 0; // game_state=0 means menu, 1 means game, 2 means game over, 3 means high score, 4 means instructions, 5 means credits
 
-bool explosion_music = false;
+bool play_music = true;
 
 int score = 0;
 int lives = 5;
 int game_over = 0;
 
-int name_index = 0;
-char name[100];
+int name_index = 0; // index of name of player string
+char name[100]; // name of player
 
-int number;
+int number; // number of scores stored in highscore.txt
 
-char menu[5][20] = {"menubg.bmp", "title.bmp", "menu.bmp"};
+char menu[6][20] = {"menubg.bmp", "title.bmp", "menu.bmp","instructions.bmp","credits.bmp","music.bmp"};
 void showmenu()
 {
+	//Showing menu interface
 	if (game_state == 0)
 	{
 		iShowBMP(0, 0, menu[0]);
 		iShowBMP2(15, 550, menu[1], 255);  // title
 		iShowBMP2(120, 150, menu[2], 255); // menu
+		if(play_music)
+		{
+			iShowBMP(925,625, menu[5]);
+		}
+		else
+		{
+			iShowBMP(925,625,"musicoff.bmp");
+		}
+	}
+
+	if (game_state == 4)
+	{
+		iShowBMP(0,0,menu[3]);
+	}
+	if (game_state == 5)
+	{
+		iShowBMP(0,0,menu[4]);
 	}
 }
 
 void playgame()
 {
+	//showing spaceship and space (constant things)
 	if (game_state == 1)
 	{
 		iShowBMP(0, 0, game[0]);				   // space background show
@@ -68,6 +87,7 @@ weapon bullet1[20];
 
 void shoot()
 {
+	//showing bullet, when playgame is on
 	if (game_state == 1)
 	{
 		for (int i = 0; i < 20; i++)
@@ -118,7 +138,7 @@ struct enemy
 };
 enemy asteroid[asteroidnumber];
 enemy enemyship[enemyshipnumber];
-enemy enemy_bullet[enemyshipnumber][10];
+enemy enemy_bullet[enemyshipnumber][30];
 
 void enemy_shoot()
 {
@@ -126,7 +146,7 @@ void enemy_shoot()
 	{
 		for (int i = 0; i < enemyshipnumber; i++)
 		{
-			for(int j=0;j<10;j++)
+			for(int j=0;j<30;j++)
 			{
 				if (enemy_bullet[i][j].bullet_show)
 				{
@@ -141,6 +161,9 @@ void enemy_shoot()
 		}
 	}
 }
+
+int life_x, life_y;
+bool life_show;
 
 void enemy_spawn()
 {
@@ -187,6 +210,18 @@ void enemy_spawn()
 				} 
 			}
 		}
+
+		//life spawn
+		if(score%100==0)
+		{
+			life_show = true;
+			life_x = 5 + rand() % (screenwidth - 100);
+			life_y = screenheight + rand() % 100;
+		}
+		if(life_show)
+		{
+			iShowBMP2(life_x,life_y,"life.bmp",0);
+		}
 	}
 }
 
@@ -207,9 +242,19 @@ void collision_animation()
 		{
 				iShowBMP2(collision[i].collision_x, collision[i].collision_y, animation[collision[i].animation_index], 0);
 		}
-			// PlaySoundA("music\\efprintf(point,"Yo, bang bang skitz, skitz, nigga");xplosion.wav", NULL, SND_FILENAME | SND_ASYNC);
-		}
+	}
 }
+
+char scoreboard[10];
+char showlives[10];
+
+
+struct score_store
+{
+	char name[100];
+	int score;
+};
+score_store high_score[100];
 
 
 void scorecard()
@@ -219,10 +264,10 @@ void scorecard()
 		iSetColor(255, 255, 255);
 		iText(screenwidth - 100, screenheight - 30, "Score: ", GLUT_BITMAP_HELVETICA_18);
 		iText(screenwidth - 100, screenheight - 50, "Lives: ", GLUT_BITMAP_HELVETICA_18);
-		char scoreboard[10];
+		
 		sprintf(scoreboard, "%d", score);
 		iText(screenwidth - 40, screenheight - 30, scoreboard, GLUT_BITMAP_HELVETICA_18);
-		char showlives[10];
+		
 		sprintf(showlives, "%d", lives);
 		iText(screenwidth - 40, screenheight - 50, showlives, GLUT_BITMAP_HELVETICA_18);
 	}
@@ -242,7 +287,6 @@ void gameover()
 		iShowBMP(0, 0, game[4]);
 		iSetColor(255, 255, 255);
 		iText(410, screenheight - 180, "Your Score: ", GLUT_BITMAP_TIMES_ROMAN_24);
-		char scoreboard[10];
 		sprintf(scoreboard, "%d", score);
 		iSetColor(255, 255, 255);
 		iText(530, screenheight - 180, scoreboard, GLUT_BITMAP_TIMES_ROMAN_24);
@@ -275,7 +319,7 @@ void gameover()
 		}
 		for(int i=0;i<enemyshipnumber;i++)
 		{
-			for(int j=0;j<10;j++)
+			for(int j=0;j<30;j++)
 			{
 				enemy_bullet[i][j].bullet_show=false;
 			}
@@ -293,18 +337,28 @@ void highscore()
 	int perform;
 	int i = 0;
 	int dy = 400;
-	for (int i = 0; i < number; i++)
+	
+	iShowBMP(0,0,"scoreback.bmp");
+	iShowBMP(240,200,"scorebg.bmp");
+	iSetColor(136,0,21);
+	iText(300,100+dy,"Position", GLUT_BITMAP_TIMES_ROMAN_24);
+	iText(450,100+dy,"Name", GLUT_BITMAP_TIMES_ROMAN_24);
+	iText(640,100+dy,"Score", GLUT_BITMAP_TIMES_ROMAN_24);
+	for (int i = 0; i < 5; i++)
 	{
 		fscanf(fp, "%s %d", show, &perform);
 		char scorecard[10];
+		char serial[10];
 		itoa(perform, scorecard, 10);
-		iSetColor(255, 0, 0);
-		iText(400, 100 + dy, show, GLUT_BITMAP_TIMES_ROMAN_24);
-		iText(500, 100 + dy, scorecard, GLUT_BITMAP_TIMES_ROMAN_24);
+		itoa(i+1, serial, 10);
+		iSetColor(255, 255, 255);
+		iText(330,50+dy,serial, GLUT_BITMAP_TIMES_ROMAN_24);
+		iText(450, 50 + dy, show, GLUT_BITMAP_TIMES_ROMAN_24);
+		iText(650, 50 + dy, scorecard, GLUT_BITMAP_TIMES_ROMAN_24);
 		dy -= 50;
 	}
 	fclose(fp);
-	iText(300, 100, "Press Enter to go to Main Menu", GLUT_BITMAP_TIMES_ROMAN_24);
+
 }
 
 /*
@@ -343,12 +397,6 @@ void iMouseMove(int mx, int my)
 	*/
 void iMouse(int button, int state, int mx, int my)
 {
-	/* if (game_state == 0 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && mx>=120 && mx<=582 && my>=150 && my<=475 ) {
-		//place your codes here
-		//	printf("x = %d, y= %d\n",mx,my);
-		game_state = 1;
-	} */
-
 	if (game_state == 0 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && mx >= 120 && mx <= (120 + 291))
 	{
 		if (my >= 150 && my <= (150 + 63))
@@ -357,7 +405,7 @@ void iMouse(int button, int state, int mx, int my)
 		}
 		if (my >= 231 && my <= (231 + 63))
 		{
-			// credit
+			game_state = 5;
 		}
 		if (my > 312 && my <= (312 + 63))
 		{
@@ -365,13 +413,33 @@ void iMouse(int button, int state, int mx, int my)
 		}
 		if (my >= 394 && my <= (394 + 63))
 		{
-			// instructions
+			game_state = 4;
 		}
 		if (my >= 476 && my <= (476 + 63))
 		{
 			game_state = 1;
 		}
 	}
+
+	if (game_state == 0 && button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+	{
+		if(mx>925 && mx< (925+50) && my>625 && my<(625+50))
+		{
+			if(play_music == true)
+			{
+				play_music = false;
+				PlaySoundA(NULL, NULL, SND_FILENAME | SND_ASYNC);
+			}
+			else if(play_music == false)
+			{
+				play_music = true;
+				PlaySoundA("music\\street.wav", NULL, SND_FILENAME | SND_ASYNC);
+
+			}
+		}
+	}
+
+
 
 	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
 	{
@@ -398,6 +466,45 @@ void iMouse(int button, int state, int mx, int my)
 	}
 }
 
+
+
+
+void sort_leaderboard()
+{
+	FILE *ofp = fopen("numberofplayer.txt", "r");
+	fscanf(ofp, "%d", &number);
+	fclose(ofp);
+
+	FILE *fp = fopen("highscore.txt","r");
+	for(int i=0;i<number;i++)
+	{
+		fscanf(fp,"%s %d", high_score[i].name,&high_score[i].score);
+	}
+	fclose(fp);
+	for(int i=0; i<number;i++)
+	{
+		for(int j=i+1;j<number;j++)
+		{
+			if(high_score[j].score > high_score[i].score)
+			{
+				int temp = high_score[i].score;
+				high_score[i].score = high_score[j].score;
+				high_score[j].score = temp;
+
+				char temp2[100];
+				strcpy(temp2, high_score[i].name);
+				strcpy(high_score[i].name, high_score[j].name);
+				strcpy(high_score[j].name, temp2);
+			}
+		}
+		fp = fopen("highscore.txt","w");
+		for(int i=0;i<number;i++)
+		{
+			fprintf(fp,"%s %d\n", high_score[i].name,high_score[i].score);
+		}
+	}
+	fclose(fp);
+}
 /*
 	function iKeyboard() is called whenever the user hits a key in keyboard.
 	key- holds the ASCII value of the key pressed.
@@ -408,7 +515,7 @@ void iKeyboard(unsigned char key)
 	{
 		exit(0);
 	}
-	if (game_state == 2 && key != '\b')
+	if (game_state == 2 && key != '\b' && key!='\r')
 	{
 		name[name_index] = key;
 		name_index++;
@@ -421,19 +528,26 @@ void iKeyboard(unsigned char key)
 	}
 	if (key == '\r')
 	{
-		if (game_state == 2)
+		if (game_state == 2 && strlen(name)!=0)
 		{
-			FILE *fp = fopen("highscore.txt", "a");
-			fprintf(fp, "%s %d\n", name, score);
-			fclose(fp);
-
 			FILE *ofp = fopen("numberofplayer.txt", "r");
 			fscanf(ofp, "%d", &number);
 			fclose(ofp);
+
+			FILE *fp = fopen("highscore.txt", "a");
+			fprintf(fp, "%s %d\n", name, score);
+			fclose(fp);
 			number++;
+			
+			
 			ofp = fopen("numberofplayer.txt", "w");
 			fprintf(ofp, "%d", number);
 			fclose(ofp);
+
+			sort_leaderboard();
+
+			name[0] = '\0';
+			name_index = 0;
 			game_state = 0;
 			lives = 5;
 			score = 0;
@@ -442,6 +556,19 @@ void iKeyboard(unsigned char key)
 		{
 			game_state = 0;
 		}
+		if (game_state == 4)
+		{
+			game_state = 0;
+		}
+		if (game_state == 5)
+		{
+			game_state = 0;
+		}
+	}
+
+	if(game_state == 1 && key == 'p')
+	{
+		game_state = 0;
 	}
 
 	// place your codes for other keys here
@@ -559,7 +686,7 @@ void collisioncheck()
 			// collision between player and enemy bullet
 			for(int i=0;i<enemyshipnumber;i++)
 			{
-				for(int j=0;j<10;j++)
+				for(int j=0;j<30;j++)
 				{
 					if ((player_x < (enemy_bullet[i][j].bullet_x + 7)) && (enemy_bullet[i][j].bullet_show == true) && ((player_x + spaceshipwidth) > enemy_bullet[i][j].bullet_x) && ((player_y + spaceshipheight-33) > enemy_bullet[i][j].bullet_y) && ((enemy_bullet[i][j].bullet_x+ 40) > player_y))
 					{
@@ -633,6 +760,39 @@ void collisioncheck()
 			}
 
 
+			//collision between player and enemy spaceship
+			for (int k = 0; k < enemyshipnumber; k++)
+			{
+				if ((player_x < (enemyship[k].enemyship_x + 101)) && (enemyship[k].enemyship_show == true) && ((player_x + spaceshipwidth) > enemyship[k].enemyship_x) && ((player_y + spaceshipheight-33) > enemyship[k].enemyship_y) && ((enemyship[k].enemyship_y + 110) > player_y))
+				{
+					collision[collision_no].collision_x = asteroid[k].asteroid_x;
+					collision[collision_no].collision_y = asteroid[k].asteroid_y;
+					collision[collision_no].collision_show = true;
+					collision_no++;
+					if(collision_no>19)
+					{
+						collision_no=0;
+					}
+					lives--;
+					enemyship[k].enemyship_life--;
+					if(enemyship[k].enemyship_life==0)
+					{
+						enemyship[k].enemyship_show = false;
+					}
+				}
+			}
+
+
+			//using life bonus
+			if ((player_x < life_x + 50) && (life_show == true) && ((player_x + spaceshipwidth) > life_x) && ((player_y + spaceshipheight-33) > life_y) && ((life_y + 50) > player_y))
+			{
+				lives++;
+				life_show = false;
+			}
+
+
+
+
 		}
 	}
 }
@@ -665,12 +825,21 @@ void change()
 	}
 	for(int i=0;i<enemyshipnumber;i++)
 	{
-		for(int j=0;j<10;j++)
+		for(int j=0;j<30;j++)
 		{
 			if(enemy_bullet[i][j].bullet_show == true)
 			{
 				enemy_bullet[i][j].bullet_y -= 5;
 			}
+		}
+	}
+
+	if(life_show)
+	{
+		life_y -= 3;
+		if(life_y<0)
+		{
+			life_show = false;
 		}
 	}
 	
@@ -707,16 +876,17 @@ void enemy_shooting()
 		{
 			if(enemyship[i].enemyship_show==true && enemyship[i].enemyship_y<screenheight) 
 			{
-				if (enemy_bullet_no >= 9)
+				if (enemy_bullet_no >= 29)
 				{
 					enemy_bullet_no = -1;
 				}
 			enemy_bullet_no++;
-			enemy_bullet[i][enemy_bullet_no].bullet_x = enemyship[i].enemyship_x + 6;
-			enemy_bullet[i][enemy_bullet_no].bullet_y = enemyship[i].enemyship_y + 0;
+			enemy_bullet[i][enemy_bullet_no].bullet_x = enemyship[i].enemyship_x + 50;
+			enemy_bullet[i][enemy_bullet_no].bullet_y = enemyship[i].enemyship_y;
 			enemy_bullet[i][enemy_bullet_no].bullet_show = true;
 			}
 		}
+
 	}
 }
 
@@ -741,7 +911,10 @@ void col_animation()
 int main()
 {
 	enemy_coordinates();
-	// PlaySoundA("music\\street.wav", NULL, SND_FILENAME | SND_ASYNC);
+	if(play_music)
+	{
+		PlaySoundA("music\\street.wav", NULL, SND_FILENAME | SND_ASYNC);
+	}
 	iSetTimer(20, collisioncheck);
 	iSetTimer(1, change);
 	iSetTimer(30,col_animation);
