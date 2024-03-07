@@ -5,7 +5,7 @@
 #define screenheight 700
 #define screenwidth 1000
 #define asteroidnumber 10
-#define enemyshipnumber 2
+#define enemyshipnumber 4
 #define spaceshipheight 105
 #define spaceshipwidth 117
 #define asteroidheight 60
@@ -16,25 +16,34 @@
 
 char animation[9][16] = {"anim\\anim1.bmp", "anim\\anim2.bmp", "anim\\anim3.bmp", "anim\\anim4.bmp", "anim\\anim5.bmp", "anim\\anim6.bmp", "anim\\anim7.bmp", "anim\\anim8.bmp"};
 char game[7][20] = {"space1.bmp", "asteroid.bmp", "ship.bmp", "enemyship.bmp", "gameover.bmp","fire.bmp","enemyshoot.bmp"};
+//game[0] - space background
+//game[1] - asteroid icon
+//game[2] - spaceship icon
+//game[3] - enemy spaceship icon
 
-int player_x = 0, player_y = 0; // Co_ordinates of spaceship
+//game[4] - gameover page
 
-int shoot_radius = 5; // bullet radius
+//game[5] - player shoot icon
+//game[6] - enemy shoot icon
 
 int game_state = 0; // game_state=0 means menu, 1 means game, 2 means game over, 3 means high score, 4 means instructions, 5 means credits
 
+int player_x = 0, player_y = 0; // Co_ordinates of spaceship
 bool play_music = true;
 
+//player stats
 int score = 0;
 int lives = 5;
-int game_over = 0;
-
 int name_index = 0; // index of name of player string
 char name[100]; // name of player
+
+int game_over = 0;
 
 int number; // number of scores stored in highscore.txt
 
 char menu[6][20] = {"menubg.bmp", "title.bmp", "menu.bmp","instructions.bmp","credits.bmp","music.bmp"};
+//menu images
+
 void showmenu()
 {
 	//Showing menu interface
@@ -55,11 +64,11 @@ void showmenu()
 
 	if (game_state == 4)
 	{
-		iShowBMP(0,0,menu[3]);
+		iShowBMP(0,0,menu[3]); //instructions
 	}
 	if (game_state == 5)
 	{
-		iShowBMP(0,0,menu[4]);
+		iShowBMP(0,0,menu[4]); //credits
 	}
 }
 
@@ -87,7 +96,7 @@ weapon bullet1[20];
 
 void shoot()
 {
-	//showing bullet, when playgame is on
+	//showing player bullets, when playgame is on
 	if (game_state == 1)
 	{
 		for (int i = 0; i < 20; i++)
@@ -142,6 +151,7 @@ enemy enemy_bullet[enemyshipnumber][30];
 
 void enemy_shoot()
 {
+	//Showing enemy bullets, when playgame is on
 	if (game_state == 1)
 	{
 		for (int i = 0; i < enemyshipnumber; i++)
@@ -167,9 +177,10 @@ bool life_show;
 
 void enemy_spawn()
 {
+	
 	if (game_state == 1)
 	{
-
+		//showing asteroids
 		for (int i = 0; i < asteroidnumber; i++)
 		{
 			if (asteroid[i].asteroid_show == true)
@@ -188,6 +199,8 @@ void enemy_spawn()
 			}
 		}
 
+		//showing enemy spaceships
+
 		if (score > 50)
 		{
 			for (int i = 0; i < enemyshipnumber; i++)
@@ -204,14 +217,14 @@ void enemy_spawn()
 					enemyship[i].enemyship_life = 3;
 					enemyship[i].horizontal = false;
 				}
-				if (enemyship[i].enemyship_y < screenheight - 150 - (rand() % 300))
+				if (enemyship[i].enemyship_y < screenheight - 100 - (rand() % 400))
 				{
 					enemyship[i].horizontal = true;
 				} 
 			}
 		}
 
-		//life spawn
+		//life bonus
 		if(score%100==0)
 		{
 			life_show = true;
@@ -236,6 +249,7 @@ destruction collision[20];
 
 void collision_animation()
 {
+	//showing collision animation images
 	for (int i = 0; i < 20; i++)
 	{
 		if (collision[i].collision_show)
@@ -259,6 +273,7 @@ score_store high_score[100];
 
 void scorecard()
 {
+	//showing scorecard while game is on
 	if (game_state == 1)
 	{
 		iSetColor(255, 255, 255);
@@ -280,6 +295,8 @@ void scorecard()
 
 void gameover()
 {
+	//showing gameover interface
+
 	if (lives < 0)
 	{
 		game_state = 2;
@@ -293,6 +310,8 @@ void gameover()
 		iSetColor(0, 0, 0);
 		iText(370, screenheight - 265, name, GLUT_BITMAP_TIMES_ROMAN_24);
 	}
+
+	//resetting all variables
 	if (game_state == 2)
 	{
 		player_x = 0;
@@ -329,6 +348,7 @@ void gameover()
 
 void highscore()
 {
+	//showing highscores in highscore mode
 	FILE *numberfp = fopen("numberofplayer.txt", "r");
 	fscanf(numberfp, "%d", &number);
 	fclose(numberfp);
@@ -528,6 +548,7 @@ void iKeyboard(unsigned char key)
 	}
 	if (key == '\r')
 	{
+		//gameover interface, taking input of name, sorting leaderboard
 		if (game_state == 2 && strlen(name)!=0)
 		{
 			FILE *ofp = fopen("numberofplayer.txt", "r");
@@ -552,6 +573,7 @@ void iKeyboard(unsigned char key)
 			lives = 5;
 			score = 0;
 		}
+		//changing pages
 		if (game_state == 3)
 		{
 			game_state = 0;
@@ -568,6 +590,7 @@ void iKeyboard(unsigned char key)
 
 	if(game_state == 1 && key == 'p')
 	{
+		//pausing game
 		game_state = 0;
 	}
 
@@ -585,6 +608,7 @@ void iKeyboard(unsigned char key)
 	*/
 void iSpecialKeyboard(unsigned char key)
 {
+	//moving player spaceship
 	if (key == GLUT_KEY_UP && player_y + 140 < screenheight)
 	{
 		player_y += 10;
@@ -605,6 +629,7 @@ void iSpecialKeyboard(unsigned char key)
 
 void shooting()
 {
+	//player shooting by timer, will be called inside "change" function
 	if (game_state == 1)
 	{
 		for (int i = 0; i < 20; i++)
@@ -806,6 +831,8 @@ void change()
 	if (game_state == 1)
 	{
 		shooting();
+
+		//moving asteroids
 		for (int i = 0; i < asteroidnumber; i++)
 		{
 			asteroid[i].asteroid_y -= 4;
@@ -816,13 +843,17 @@ void change()
 			{
 				enemyship[i].enemyship_y -= enemyship[i].enemyship_dy;
 			}
-			if (enemyship[i].enemyship_x >= screenwidth || enemyship[i].enemyship_x < 5)
+			if (enemyship[i].enemyship_x >= player_x)
 			{
-				enemyship[i].enemyship_dx = -enemyship[i].enemyship_dx;
+			    enemyship[i].enemyship_x -= enemyship[i].enemyship_dx;
 			}
-			enemyship[i].enemyship_x -= enemyship[i].enemyship_dx;
+			if (enemyship[i].enemyship_x <= player_x)
+			{
+			    enemyship[i].enemyship_x += enemyship[i].enemyship_dx;
+			}
 		}
 	
+	//enemy bullets moving with time
 	for(int i=0;i<enemyshipnumber;i++)
 	{
 		for(int j=0;j<30;j++)
@@ -834,19 +865,22 @@ void change()
 		}
 	}
 
-		if(life_show)
+	//moving life bonus
+	if(life_show)
+	{
+		life_y -= 3;
+		if(life_y<0)
 		{
-			life_y -= 3;
-			if(life_y<0)
-			{
-				life_show = false;
-			}
+			life_show = false;
 		}
+	}
+
 	}
 }
 
 void enemy_coordinates()
 {
+	//defining enemy co ordinates
 	if (game_state == 1)
 	{
 		for (int i = 0; i < asteroidnumber; i++)
@@ -870,6 +904,7 @@ void enemy_coordinates()
 
 void enemy_shooting()
 {
+	//enemy shooting with time, called in ishowtimer
 	if (game_state == 1)
 	{
 		for(int i=0;i<enemyshipnumber;i++)
@@ -893,6 +928,7 @@ void enemy_shooting()
 
 void col_animation()
 {
+	//collision animation, changing animation index with time
 	for(int i=0;i<20;i++)
 		{
 			if(collision[i].collision_show==true)
